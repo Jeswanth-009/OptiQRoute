@@ -1,0 +1,33 @@
+{
+  "routes": [
+    {
+      "vehicle_id": 0,
+      "locations": [
+        1,
+        2,
+        8,
+        7,
+        5,
+        3,
+        9,
+        10
+      ],
+      "total_distance": 36247.98436619759,
+      "total_duration": 6551.804731070958,
+      "total_demand": 86.10398616813126
+    },
+    {
+      "vehicle_id": 1,
+      "locations": [
+        4,
+        6
+      ],
+      "total_distance": 23039.131910296208,
+      "total_duration": 2949.1827074906146,
+      "total_demand": 43.3913911980099
+    }
+  ],
+  "total_distance": 59287.1162764938,
+  "total_duration": 9500.987438561573,
+  "num_vehicles_used": 2
+}
