@@ -2,10 +2,51 @@
 //! 
 //! This demonstrates how to create VRP instances, solve them, and validate solutions.
 
+use clap::{Arg, Command};
 use vrp_solver::*;
 use std::time::Instant;
 
 fn main() -> VrpResult<()> {
+    let matches = Command::new("VRP Solver")
+        .version("1.0")
+        .author("VRP Solver Team")
+        .about("Vehicle Routing Problem Solver with OSM Integration")
+        .arg(
+            Arg::new("instance")
+                .short('i')
+                .long("instance")
+                .value_name("FILE")
+                .help("Path to VRP instance JSON file")
+                .required(false),
+        )
+        .arg(
+            Arg::new("algorithm")
+                .short('a')
+                .long("algorithm")
+                .value_name("ALGORITHM")
+                .help("Algorithm to use: greedy, clarke-wright, or multi-start")
+                .default_value("multi-start")
+                .required(false),
+        )
+        .arg(
+            Arg::new("output")
+                .short('o')
+                .long("output")
+                .value_name("FILE")
+                .help("Output solution JSON file")
+                .default_value("solution.json")
+                .required(false),
+        )
+        .get_matches();
+
+    // Check if custom instance provided
+    if let Some(instance_file) = matches.get_one::<String>("instance") {
+        let algorithm = matches.get_one::<String>("algorithm").unwrap();
+        let output_file = matches.get_one::<String>("output").unwrap();
+        return solve_custom_instance(instance_file, algorithm, output_file);
+    }
+
+    // Run default examples if no instance provided
     println!("🚛 Vehicle Routing Problem (VRP) Solver Demo");
     println!("==============================================\n");
 
@@ -55,6 +96,106 @@ fn main() -> VrpResult<()> {
     // Example 4: Save/load functionality
     println!("\n💾 Save/Load Example:");
     demonstrate_save_load(&instance, &solution)?;
+    
+    Ok(())
+}
+
+/// Solve a custom VRP instance from file
+fn solve_custom_instance(instance_file: &str, algorithm: &str, output_file: &str) -> VrpResult<()> {
+    println!("🚛 VRP Solver - Custom Instance");
+    println!("===============================");
+    println!("📁 Instance file: {}", instance_file);
+    println!("🧮 Algorithm: {}", algorithm);
+    println!("📁 Output file: {}", output_file);
+
+    // Load instance
+    println!("\n📖 Loading VRP instance...");
+    let instance = load_instance_from_json(instance_file)?;
+    println!("✅ Loaded instance:");
+    println!("   - Locations: {} (including depots)", instance.locations.len());
+    println!("   - Vehicles: {}", instance.vehicles.len());
+    
+    // Count customers vs depots
+    let customers = instance.locations.iter().filter(|loc| loc.demand > 0.0).count();
+    let depots = instance.locations.len() - customers;
+    println!("   - Customers: {}, Depots: {}", customers, depots);
+
+    // Show some statistics
+    let total_demand: f64 = instance.locations.iter().filter(|loc| loc.demand > 0.0).map(|loc| loc.demand).sum();
+    let total_capacity: f64 = instance.vehicles.iter().map(|v| v.capacity).sum();
+    println!("   - Total demand: {:.1}", total_demand);
+    println!("   - Total capacity: {:.1}", total_capacity);
+    println!("   - Capacity utilization: {:.1}%", (total_demand / total_capacity) * 100.0);
+
+    // Select solver based on algorithm parameter
+    println!("\n🧮 Solving with {} algorithm...", algorithm);
+    let start_time = Instant::now();
+    
+    let solution = match algorithm.to_lowercase().as_str() {
+        "greedy" => {
+            let solver = GreedyNearestNeighbor::new();
+            solver.solve(&instance)?
+        },
+        "greedy-farthest" => {
+            let solver = GreedyNearestNeighbor::new().with_farthest_start(true);
+            solver.solve(&instance)?
+        },
+        "clarke-wright" | "cw" => {
+            let solver = ClarkeWrightSavings::new();
+            solver.solve(&instance)?
+        },
+        "multi-start" | "multi" => {
+            let solver = MultiStartSolver::new().with_default_solvers();
+            solver.solve(&instance)?
+        },
+        _ => {
+            eprintln!("❌ Unknown algorithm: {}", algorithm);
+            eprintln!("💡 Available algorithms: greedy, greedy-farthest, clarke-wright, multi-start");
+            return Ok(());
+        }
+    };
+    
+    let solve_time = start_time.elapsed();
+    
+    println!("✅ Solution found in {:.2}ms", solve_time.as_secs_f64() * 1000.0);
+    println!("{}", format_solution_summary(&solution));
+    
+    // Validate solution
+    let is_valid = validate_solution(&instance, &solution)?;
+    println!("\n🔍 Solution validation: {}", if is_valid { "✅ VALID" } else { "❌ INVALID" });
+    
+    if !is_valid {
+        println!("\n📋 Validation Report:");
+        let report = get_validation_report(&instance, &solution)?;
+        println!("{}", report);
+    }
+    
+    // Save solution
+    println!("\n💾 Saving solution...");
+    save_solution_to_json(&solution, output_file)?;
+    println!("✅ Solution saved to: {}", output_file);
+    
+    // Show route details
+    println!("\n📊 Route Details:");
+    for (i, route) in solution.routes.iter().enumerate() {
+        println!("Route {} (Vehicle {}):", i + 1, route.vehicle_id);
+        println!("  - Locations: {:?}", route.locations);
+        println!("  - Distance: {:.1}m", route.total_distance);
+        println!("  - Duration: {:.1}s", route.total_duration);
+        println!("  - Demand: {:.1}", route.total_demand);
+        
+        // Show location details
+        for &loc_id in &route.locations {
+            if let Some(location) = instance.get_location(loc_id) {
+                println!("    {} ({:.6}, {:.6}) - Demand: {:.1}", 
+                    location.name, location.coordinate.lat, location.coordinate.lon, location.demand);
+            }
+        }
+    }
+    
+    println!("\n💡 Next steps:");
+    println!("   - Visualize with: cargo run --bin vrp_to_geojson -- --solution {} --include-points", output_file);
+    println!("   - Export CSV: Available in solution summary above");
     
     Ok(())
 }

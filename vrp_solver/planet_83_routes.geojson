@@ -1,0 +1,329 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.30971029999999,
+          17.7402516
+        ]
+      },
+      "properties": {
+        "demand": 15.531148180055476,
+        "location_id": 8208214239,
+        "name": "Customer 1",
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3094361,
+          17.7402054
+        ]
+      },
+      "properties": {
+        "demand": 5.686856359099122,
+        "location_id": 1590904537,
+        "name": "Customer 3",
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3089335,
+          17.7401139
+        ]
+      },
+      "properties": {
+        "demand": 21.915809885881995,
+        "location_id": 1590904535,
+        "name": "Customer 11",
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3093316,
+          17.7407048
+        ]
+      },
+      "properties": {
+        "demand": 12.81298549783649,
+        "location_id": 3762309012,
+        "name": "Customer 7",
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.30975,
+          17.7407827
+        ]
+      },
+      "properties": {
+        "demand": 19.748488554487867,
+        "location_id": 3760235927,
+        "name": "Customer 4",
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3102301,
+          17.740844
+        ]
+      },
+      "properties": {
+        "demand": 23.642902643522035,
+        "location_id": 3760235930,
+        "name": "Customer 6",
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            83.3099283,
+            17.7402884
+          ],
+          [
+            83.30971029999999,
+            17.7402516
+          ],
+          [
+            83.3094361,
+            17.7402054
+          ],
+          [
+            83.3089335,
+            17.7401139
+          ],
+          [
+            83.3093316,
+            17.7407048
+          ],
+          [
+            83.30975,
+            17.7407827
+          ],
+          [
+            83.3102301,
+            17.740844
+          ],
+          [
+            83.3099283,
+            17.7402884
+          ]
+        ]
+      },
+      "properties": {
+        "num_locations": 6,
+        "route_id": 0,
+        "total_distance": 351.20944545469155,
+        "type": "route",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3103172,
+          17.7403586
+        ]
+      },
+      "properties": {
+        "demand": 17.7293019828779,
+        "location_id": 3760235919,
+        "name": "Customer 2",
+        "route_id": 1,
+        "type": "customer",
+        "vehicle_id": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.31073839999999,
+          17.740459599999998
+        ]
+      },
+      "properties": {
+        "demand": 15.460782650868241,
+        "location_id": 3760235922,
+        "name": "Customer 8",
+        "route_id": 1,
+        "type": "customer",
+        "vehicle_id": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.31065629999999,
+          17.7409013
+        ]
+      },
+      "properties": {
+        "demand": 5.251860006883868,
+        "location_id": 3760235939,
+        "name": "Customer 9",
+        "route_id": 1,
+        "type": "customer",
+        "vehicle_id": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3109139,
+          17.7400397
+        ]
+      },
+      "properties": {
+        "demand": 15.119552742591669,
+        "location_id": 8208140283,
+        "name": "Customer 12",
+        "route_id": 1,
+        "type": "customer",
+        "vehicle_id": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.31039229999999,
+          17.739909
+        ]
+      },
+      "properties": {
+        "demand": 7.625577783348696,
+        "location_id": 3762309004,
+        "name": "Customer 5",
+        "route_id": 1,
+        "type": "customer",
+        "vehicle_id": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3104705,
+          17.7395073
+        ]
+      },
+      "properties": {
+        "demand": 6.005473707161451,
+        "location_id": 5992384943,
+        "name": "Customer 10",
+        "route_id": 1,
+        "type": "customer",
+        "vehicle_id": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            83.3099283,
+            17.7402884
+          ],
+          [
+            83.3103172,
+            17.7403586
+          ],
+          [
+            83.31073839999999,
+            17.740459599999998
+          ],
+          [
+            83.31065629999999,
+            17.7409013
+          ],
+          [
+            83.3109139,
+            17.7400397
+          ],
+          [
+            83.31039229999999,
+            17.739909
+          ],
+          [
+            83.3104705,
+            17.7395073
+          ],
+          [
+            83.3099283,
+            17.7402884
+          ]
+        ]
+      },
+      "properties": {
+        "num_locations": 6,
+        "route_id": 1,
+        "total_distance": 444.08338750394853,
+        "type": "route",
+        "vehicle_id": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3099283,
+          17.7402884
+        ]
+      },
+      "properties": {
+        "name": "Main Depot",
+        "type": "depot"
+      }
+    }
+  ]
+}

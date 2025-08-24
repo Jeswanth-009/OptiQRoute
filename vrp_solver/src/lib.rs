@@ -8,6 +8,7 @@ pub mod distance;
 pub mod solver;
 pub mod validate;
 pub mod utils;
+pub mod osm_parser;
 
 pub use types::*;
 pub use distance::*;
