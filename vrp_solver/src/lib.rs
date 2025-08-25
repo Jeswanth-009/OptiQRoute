@@ -9,6 +9,9 @@ pub mod solver;
 pub mod validate;
 pub mod utils;
 pub mod osm_parser;
+pub mod api_types;
+pub mod app_state;
+pub mod handlers;
 
 pub use types::*;
 pub use distance::*;

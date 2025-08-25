@@ -1,6 +1,6 @@
-# VRP Solver - Vehicle Routing Problem Solver in Rust
+# VRP Solver Web API
 
-A comprehensive Vehicle Routing Problem (VRP) solver implemented in Rust with parallel processing capabilities, real-world OSM data integration, and advanced geographic coordinate mapping.
+A comprehensive Vehicle Routing Problem (VRP) solver with OpenStreetMap integration, providing REST APIs for solving logistics optimization problems.
 
 ## 🚀 Features
 
@@ -47,7 +47,43 @@ The project is structured into several key modules:
 
 ## 🚀 Quick Start
 
-### Basic Usage
+### Web Server (Recommended)
+
+```bash
+# Build and run the web server
+cargo build --release
+cargo run --bin vrp-server
+
+# Server starts at http://localhost:3000
+# View API documentation in logs
+```
+
+#### Complete API Workflow
+
+```bash
+# 1. Upload OSM data
+curl -F 'file=@map.osm.pbf' http://localhost:3000/osm/upload
+
+# 2. Map depot/customers to road nodes  
+curl -X POST -H 'Content-Type: application/json' \
+  -d '{"graph_id":"...","depot":{"lat":17.735,"lon":83.315},"customers":[{"lat":17.737,"lon":83.320}]}' \
+  http://localhost:3000/vrp/map
+
+# 3. Generate VRP instance
+curl -X POST -H 'Content-Type: application/json' \
+  -d '{"graph_id":"...","vehicles":3,"capacity":50,"constraints":{"time_windows":false}}' \
+  http://localhost:3000/vrp/generate
+
+# 4. Solve VRP
+curl -X POST -H 'Content-Type: application/json' \
+  -d '{"vrp_id":"...","algorithm":"multi_start"}' \
+  http://localhost:3000/vrp/solve
+
+# 5. Export as GeoJSON for visualization
+curl 'http://localhost:3000/vrp/solution/{solution_id}/export?format=geojson'
+```
+
+### Library Usage
 
 ```rust
 use vrp_solver::*;

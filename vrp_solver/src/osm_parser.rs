@@ -21,7 +21,7 @@ pub struct OsmWay {
     pub tags: HashMap<String, String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OsmData {
     pub nodes: HashMap<i64, OsmNode>,
     pub ways: HashMap<i64, OsmWay>,
