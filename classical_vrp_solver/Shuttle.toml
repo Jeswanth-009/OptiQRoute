@@ -1,0 +1,29 @@
+[package]
+name = "vrp-solver"
+version = "0.1.0"
+
+[build]
+# Build configuration for Shuttle deployment
+cargo-features = []
+
+[deploy]
+# Deployment configuration
+assets = []
+
+[config]
+# Runtime configuration
+# Max request size for OSM file uploads (100MB)
+max_request_size = "100MB"
+# Request timeout (5 minutes for large OSM processing)
+request_timeout = "300s"
+# Memory limit (high for OSM data processing)
+memory_limit = "1GB"
+
+# Environment variables for production
+[env]
+# Default Rust log level
+RUST_LOG = "vrp_solver=info,tower_http=info"
+# Cleanup interval (in seconds)
+CLEANUP_INTERVAL = "3600"
+# Data retention hours
+DATA_RETENTION_HOURS = "24"

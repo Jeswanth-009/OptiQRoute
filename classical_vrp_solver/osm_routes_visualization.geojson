@@ -1,0 +1,239 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3148488,
+          17.7353862
+        ]
+      },
+      "properties": {
+        "location_id": 3762201264,
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.31454889999999,
+          17.735409
+        ]
+      },
+      "properties": {
+        "location_id": 3762201267,
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.31792589999999,
+          17.7348335
+        ]
+      },
+      "properties": {
+        "location_id": 11853794496,
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3198256,
+          17.7352824
+        ]
+      },
+      "properties": {
+        "location_id": 1054293090,
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3236842,
+          17.7330053
+        ]
+      },
+      "properties": {
+        "location_id": 10653480225,
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3152149,
+          17.7304921
+        ]
+      },
+      "properties": {
+        "location_id": 13086573759,
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.31569329999999,
+          17.7283488
+        ]
+      },
+      "properties": {
+        "location_id": 4875800426,
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.30908339999999,
+          17.7331744
+        ]
+      },
+      "properties": {
+        "location_id": 8227713316,
+        "route_id": 0,
+        "type": "customer",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            83.3148488,
+            17.7353862
+          ],
+          [
+            83.31454889999999,
+            17.735409
+          ],
+          [
+            83.31792589999999,
+            17.7348335
+          ],
+          [
+            83.3198256,
+            17.7352824
+          ],
+          [
+            83.3236842,
+            17.7330053
+          ],
+          [
+            83.3152149,
+            17.7304921
+          ],
+          [
+            83.31569329999999,
+            17.7283488
+          ],
+          [
+            83.30908339999999,
+            17.7331744
+          ]
+        ]
+      },
+      "properties": {
+        "num_locations": 8,
+        "route_id": 0,
+        "total_demand": 93.03948922478264,
+        "total_distance": 3820.461418504551,
+        "total_duration": 4814.992834046604,
+        "type": "route",
+        "vehicle_id": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.3166485,
+          17.7386625
+        ]
+      },
+      "properties": {
+        "location_id": 5994673528,
+        "route_id": 1,
+        "type": "customer",
+        "vehicle_id": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          83.31663999999999,
+          17.7434783
+        ]
+      },
+      "properties": {
+        "location_id": 2332930481,
+        "route_id": 1,
+        "type": "customer",
+        "vehicle_id": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            83.3166485,
+            17.7386625
+          ],
+          [
+            83.31663999999999,
+            17.7434783
+          ]
+        ]
+      },
+      "properties": {
+        "num_locations": 2,
+        "route_id": 1,
+        "total_demand": 36.45588814135853,
+        "total_distance": 1912.2046967931376,
+        "total_duration": 1115.697927101895,
+        "type": "route",
+        "vehicle_id": 1
+      }
+    }
+  ]
+}

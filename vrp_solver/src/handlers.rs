@@ -112,7 +112,7 @@ impl From<VrpError> for HandlerError {
     }
 }
 
-/// Create routes for the VRP API
+/// Create routes for the VRP API  
 pub fn create_routes() -> Router<AppState> {
     Router::new()
         .route("/health", get(health_check))
