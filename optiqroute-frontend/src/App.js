@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
+import LocationSearchInput from './components/LocationSearchInput';
+import locationStorage from './services/locationStorage';
+import MapClickHandler from './components/MapClickHandler';
 
 // Fix default markers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -12,92 +15,279 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
+// Create custom colored marker icons
+const createCustomIcon = (color) => {
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="
+      background-color: ${color};
+      width: 25px;
+      height: 25px;
+      border-radius: 50% 50% 50% 0;
+      border: 3px solid white;
+      transform: rotate(-45deg);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    "><div style="
+      width: 15px;
+      height: 15px;
+      background-color: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(45deg);
+    "></div></div>`,
+    iconSize: [25, 25],
+    iconAnchor: [12, 25],
+    popupAnchor: [0, -25]
+  });
+};
+
+// Define marker icons with correct colors
+const markerIcons = {
+  depot: createCustomIcon('#10b981'),      // Green for depot/warehouse
+  customer: createCustomIcon('#3b82f6'),   // Blue for customer locations
+  temporary: createCustomIcon('#9ca3af'),  // Gray for temporary markers
+  processing: createCustomIcon('#f59e0b'), // Orange for processing markers
+  route: createCustomIcon('#8b5cf6')       // Purple for route points
+};
+
 function App() {
   const [startLocation, setStartLocation] = useState('');
-  const [endLocation, setEndLocation] = useState('');
-  const [waypoints, setWaypoints] = useState(['']);
+  const [customerLocations, setCustomerLocations] = useState(['', '']);
   const [optimizationMode, setOptimizationMode] = useState('classical');
   const [graphRadius, setGraphRadius] = useState(5);
   const [routeCoords, setRouteCoords] = useState([]);
   const [markers, setMarkers] = useState([]);
   const [results, setResults] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [waitingForMapClick, setWaitingForMapClick] = useState(null); // null, 'depot', or customer index
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const handleMapClick = (e) => {
-    console.log('Map clicked at:', e.latlng);
-    // Add marker at clicked location
-    const newMarker = {
-      position: [e.latlng.lat, e.latlng.lng],
-      id: Date.now(),
-      type: 'waypoint'
+  // Load stored locations on component mount
+  useEffect(() => {
+    // Clear any existing markers first
+    setMarkers([]);
+    
+    // Clear location storage on page load to start fresh
+    locationStorage.clear();
+    
+    // Subscribe to location changes
+    const unsubscribe = locationStorage.addListener((locations) => {
+      updateMapMarkers(locations);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Handle ESC key to cancel map click mode
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && waitingForMapClick !== null) {
+        cancelMapClick();
+      }
     };
-    setMarkers([...markers, newMarker]);
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [waitingForMapClick]);
+
+  // Update map markers based on stored locations
+  const updateMapMarkers = (locations) => {
+    const newMarkers = locationStorage.getMapMarkers();
+    setMarkers(newMarkers);
+  };
+
+  const handleMapClick = async (e) => {
+    console.log('Map clicked at:', e.latlng, 'Waiting for map click:', waitingForMapClick);
+    
+    // Only process clicks when in map-click mode
+    if (waitingForMapClick !== null) {
+      console.log('Processing map click for location selection');
+      // Handle map click for location selection
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+      
+      // Add temporary marker immediately for visual feedback
+      const tempMarker = {
+        position: [lat, lng],
+        id: `temp_${Date.now()}`,
+        type: 'processing',
+        address: 'Getting address...'
+      };
+      setMarkers([...markers, tempMarker]);
+      
+      try {
+        console.log('Attempting reverse geocoding...');
+        // Try to get address from reverse geocoding
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+        );
+        const data = await response.json();
+        console.log('Reverse geocoding response:', data);
+        
+        const address = data.display_name || `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+        
+        const locationData = {
+          address: address,
+          coordinates: { lat, lng },
+          addressComponents: data.address || {},
+          placeId: `map_click_${Date.now()}`
+        };
+
+        console.log('Location data created:', locationData);
+
+        if (waitingForMapClick === 'depot') {
+          console.log('Setting depot location');
+          handleDepotLocationSelect(locationData);
+          setSuccessMessage('✅ Depot location set successfully!');
+        } else if (typeof waitingForMapClick === 'number') {
+          console.log('Setting customer location for index:', waitingForMapClick);
+          handleCustomerLocationSelect(waitingForMapClick, locationData);
+          setSuccessMessage(`✅ Customer ${waitingForMapClick + 1} location set successfully!`);
+        }
+        
+      } catch (error) {
+        console.warn('Reverse geocoding failed, using coordinates:', error);
+        
+        // Fallback to coordinates if reverse geocoding fails
+        const address = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+        const locationData = {
+          address: address,
+          coordinates: { lat, lng },
+          addressComponents: {},
+          placeId: `map_click_${Date.now()}`
+        };
+
+        console.log('Using fallback location data:', locationData);
+
+        if (waitingForMapClick === 'depot') {
+          handleDepotLocationSelect(locationData);
+          setSuccessMessage('✅ Depot location set successfully!');
+        } else if (typeof waitingForMapClick === 'number') {
+          handleCustomerLocationSelect(waitingForMapClick, locationData);
+          setSuccessMessage(`✅ Customer ${waitingForMapClick + 1} location set successfully!`);
+        }
+      }
+      
+      // Remove temporary marker
+      setMarkers(prevMarkers => prevMarkers.filter(m => m.id !== tempMarker.id));
+      
+      // Reset waiting state
+      console.log('Resetting waiting state');
+      setWaitingForMapClick(null);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      // Do nothing when not in map-click mode - no temporary markers
+      console.log('Map clicked but not in map-click mode, ignoring click');
+    }
+  };
+
+  // Handle depot location selection
+  const handleDepotLocationSelect = (locationData) => {
+    console.log('Setting depot location:', locationData);
+    setStartLocation(locationData.address);
+    locationStorage.setDepot(locationData);
+  };
+
+  // Handle customer location selection
+  const handleCustomerLocationSelect = (index, locationData) => {
+    console.log('Setting customer location:', index, locationData);
+    const newCustomerLocations = [...customerLocations];
+    newCustomerLocations[index] = locationData.address;
+    setCustomerLocations(newCustomerLocations);
+    locationStorage.setCustomer(index, locationData);
+  };
+
+  // Enable map-click mode for depot
+  const enableDepotMapClick = () => {
+    console.log('Enabling depot map click mode');
+    setWaitingForMapClick('depot');
+  };
+
+  // Enable map-click mode for customer location
+  const enableCustomerMapClick = (index) => {
+    console.log('Enabling customer map click mode for index:', index);
+    setWaitingForMapClick(index);
+  };
+
+  // Cancel map-click mode
+  const cancelMapClick = () => {
+    console.log('Canceling map click mode');
+    setWaitingForMapClick(null);
+  };
+
+  // Clear all data and start fresh
+  const clearAllData = () => {
+    setStartLocation('');
+    setCustomerLocations(['', '']);
+    setMarkers([]);
+    setRouteCoords([]);
+    setResults(null);
+    setWaitingForMapClick(null);
+    setSuccessMessage('');
+    locationStorage.clear();
   };
 
   const optimizeRoute = async () => {
-    if (!startLocation.trim()) {
-      alert('Please enter a start location.');
-      return;
-    }
-
-    if (!endLocation.trim()) {
-      alert('Please enter an end location.');
-      return;
-    }
-
-    setIsAnalyzing(true);
-
     try {
+      const routeData = locationStorage.getRouteData();
+      console.log('Route data for optimization:', routeData);
+      
+      setIsAnalyzing(true);
+
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Calculate metrics based on optimization mode
-      const baseDistance = 25 + (waypoints.filter(w => w.trim()).length * 8);
-      const improvement = optimizationMode === 'quantum' ? 0.85 : 0.92;
+      // Calculate metrics based on optimization mode and number of customers
+      const numCustomers = routeData.customers.length;
+      const baseDistance = 15 + (numCustomers * 6);
+      const improvement = optimizationMode === 'quantum' ? 0.82 : 0.90;
       const totalDistance = Math.round(baseDistance * improvement);
-      const timeSaved = Math.round((baseDistance - totalDistance) * 0.08 * 10) / 10;
-      const numWaypoints = waypoints.filter(w => w.trim()).length;
       
       setResults({
         distance: `${totalDistance} km`,
         time: `${Math.round(totalDistance * 0.08 * 10) / 10} hours`,
-        optimizationTime: optimizationMode === 'quantum' ? '2.3s' : '5.7s',
+        optimizationTime: optimizationMode === 'quantum' ? '1.8s' : '4.2s',
         nodesProcessed: optimizationMode === 'quantum' ? Math.floor(Math.random() * 500 + 1200) : Math.floor(Math.random() * 300 + 800),
-        optimizationType: optimizationMode
+        optimizationType: optimizationMode,
+        customersServed: numCustomers,
+        coordinateData: routeData // Store coordinate data for external use
       });
 
-      // Generate mock route coordinates
-      const mockRoute = [
-        [17.6868, 83.2185], // Visakhapatnam center
-        [17.7068, 83.2285], // Point 1
-        [17.7168, 83.2385], // Point 2
-        [17.6968, 83.2485], // Point 3
-        [17.6868, 83.2185]  // Back to start
+      // Generate mock route coordinates from actual stored locations
+      const routePoints = [
+        [routeData.depot.lat, routeData.depot.lng], // Start at depot
+        ...routeData.customers.map(customer => [customer.lat, customer.lng]), // Visit customers
+        [routeData.depot.lat, routeData.depot.lng]  // Return to depot
       ];
-      setRouteCoords(mockRoute);
+      setRouteCoords(routePoints);
       
-    } catch (err) {
-      console.error('Error optimizing route:', err);
-      alert('An error occurred while optimizing the route. Please try again.');
+    } catch (error) {
+      console.error('Error optimizing route:', error);
+      alert(error.message || 'An error occurred while optimizing the route. Please ensure you have a depot and at least 2 customer locations.');
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const addWaypoint = () => {
-    setWaypoints([...waypoints, '']);
+  const addCustomerLocation = () => {
+    setCustomerLocations([...customerLocations, '']);
   };
 
-  const updateWaypoint = (index, value) => {
-    const newWaypoints = [...waypoints];
-    newWaypoints[index] = value;
-    setWaypoints(newWaypoints);
+  const updateCustomerLocation = (index, value) => {
+    const newLocations = [...customerLocations];
+    newLocations[index] = value;
+    setCustomerLocations(newLocations);
   };
 
-  const removeWaypoint = (index) => {
-    if (waypoints.length > 1) {
-      const newWaypoints = waypoints.filter((_, i) => i !== index);
-      setWaypoints(newWaypoints);
+  const removeCustomerLocation = (index) => {
+    if (customerLocations.length > 2) {
+      const newLocations = customerLocations.filter((_, i) => i !== index);
+      setCustomerLocations(newLocations);
+      locationStorage.removeCustomer(index);
     }
   };
 
@@ -107,6 +297,7 @@ function App() {
     const data = {
       route: routeCoords,
       results: results,
+      locationData: locationStorage.exportData(),
       timestamp: new Date().toISOString()
     };
     
@@ -131,6 +322,31 @@ function App() {
     alert(`Current: ${optimizationMode} optimization\nDistance: ${results.distance}\nTime: ${results.optimizationTime}\n\nWould show comparison with other optimization modes.`);
   };
 
+  const showCoordinateData = () => {
+    try {
+      const routeData = locationStorage.getRouteData();
+      const dataString = JSON.stringify(routeData, null, 2);
+      console.log('Coordinate Data:', routeData);
+      
+      // Create a modal or alert to show the data
+      const newWindow = window.open('', '_blank');
+      newWindow.document.write(`
+        <html>
+          <head><title>Route Coordinate Data</title></head>
+          <body>
+            <h2>Route Optimization Data</h2>
+            <pre style="background: #f5f5f5; padding: 20px; border-radius: 5px; overflow: auto;">
+${dataString}
+            </pre>
+            <button onclick="window.close()">Close</button>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
   const reRunAnalysis = () => {
     optimizeRoute();
   };
@@ -152,6 +368,9 @@ function App() {
             <h1 className="app-title">Quantum Route Optimizer</h1>
           </div>
           <div className="header-actions">
+            <button className="clear-btn" onClick={clearAllData}>
+              🗑️ Clear All
+            </button>
             <button className="export-btn" onClick={exportResults} disabled={!results}>
               📤 Export
             </button>
@@ -172,63 +391,88 @@ function App() {
           </div>
           
           <div className="form-content">
-            {/* Start Location */}
+            {/* Success Message */}
+            {successMessage && (
+              <div className="success-message">
+                {successMessage}
+              </div>
+            )}
+            {/* Depot Location */}
             <div className="form-group">
-              <label className="form-label">Start Location</label>
-              <div className="input-with-icon">
-                <input
-                  type="text"
+              <label className="form-label">Depot/Warehouse Location</label>
+              <div className="location-input-group">
+                <LocationSearchInput
                   value={startLocation}
-                  onChange={(e) => setStartLocation(e.target.value)}
-                  className="form-input"
-                  placeholder="Click on map or enter address"
+                  onChange={setStartLocation}
+                  onLocationSelect={handleDepotLocationSelect}
+                  placeholder="Search for depot/warehouse location"
+                  icon="🏢"
+                  disabled={waitingForMapClick === 'depot'}
                 />
-                <span className="input-icon">📍</span>
+                <button 
+                  className={`map-click-btn ${waitingForMapClick === 'depot' ? 'active' : ''}`}
+                  onClick={waitingForMapClick === 'depot' ? cancelMapClick : enableDepotMapClick}
+                  title={waitingForMapClick === 'depot' ? 'Cancel map click' : 'Click to select on map'}
+                >
+                  {waitingForMapClick === 'depot' ? '❌' : '🗺️'}
+                </button>
               </div>
+              {waitingForMapClick === 'depot' && (
+                <div className="map-click-hint">
+                  Click anywhere on the map to set depot location
+                </div>
+              )}
             </div>
 
-            {/* End Location */}
-            <div className="form-group">
-              <label className="form-label">End Location</label>
-              <div className="input-with-icon">
-                <input
-                  type="text"
-                  value={endLocation}
-                  onChange={(e) => setEndLocation(e.target.value)}
-                  className="form-input"
-                  placeholder="Click on map or enter address"
-                />
-                <span className="input-icon">🏁</span>
-              </div>
-            </div>
-
-            {/* Waypoints */}
+            {/* Customer Locations */}
             <div className="form-group">
               <label className="form-label">
-                Waypoints
-                <button className="add-waypoint-btn" onClick={addWaypoint}>
-                  + Add waypoints by clicking map
+                Customer Locations
+                <button className="add-customer-btn" onClick={addCustomerLocation}>
+                  + Add customer location
                 </button>
               </label>
-              {waypoints.map((waypoint, index) => (
-                <div key={index} className="waypoint-input">
-                  <input
-                    type="text"
-                    value={waypoint}
-                    onChange={(e) => updateWaypoint(index, e.target.value)}
-                    className="form-input"
-                    placeholder={`Waypoint ${index + 1}`}
-                  />
-                  {waypoints.length > 1 && (
-                    <button 
-                      className="remove-waypoint-btn"
-                      onClick={() => removeWaypoint(index)}
-                    >
-                      ×
-                    </button>
+              {customerLocations.map((location, index) => (
+                <div key={index} className="customer-input">
+                  <div className="location-input-row">
+                    <div className="location-input-group">
+                      <LocationSearchInput
+                        value={location}
+                        onChange={(value) => updateCustomerLocation(index, value)}
+                        onLocationSelect={(locationData) => handleCustomerLocationSelect(index, locationData)}
+                        placeholder={`Search for customer ${index + 1} location`}
+                        icon="🏪"
+                        disabled={waitingForMapClick === index}
+                      />
+                      <button 
+                        className={`map-click-btn ${waitingForMapClick === index ? 'active' : ''}`}
+                        onClick={waitingForMapClick === index ? cancelMapClick : () => enableCustomerMapClick(index)}
+                        title={waitingForMapClick === index ? 'Cancel map click' : 'Click to select on map'}
+                      >
+                        {waitingForMapClick === index ? '❌' : '🗺️'}
+                      </button>
+                    </div>
+                    {customerLocations.length > 2 && (
+                      <button 
+                        className="remove-customer-btn"
+                        onClick={() => removeCustomerLocation(index)}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                  {waitingForMapClick === index && (
+                    <div className="map-click-hint">
+                      Click anywhere on the map to set customer {index + 1} location
+                    </div>
                   )}
                 </div>
               ))}
+              <div className="customer-help-text">
+                Minimum 2 customer locations required for route optimization
+                <br />
+                💡 <strong>Tip:</strong> Click 🗺️ button then click map to pick locations visually
+              </div>
             </div>
 
             {/* Optimization Mode */}
@@ -313,23 +557,44 @@ function App() {
               <button className="map-control-btn">+</button>
               <button className="map-control-btn">-</button>
               <button className="map-control-btn">⌂</button>
+              {/* Debug info */}
+              {waitingForMapClick !== null && (
+                <span className="debug-info">
+                  Waiting: {waitingForMapClick === 'depot' ? 'Depot' : `Customer ${waitingForMapClick + 1}`}
+                </span>
+              )}
             </div>
           </div>
           
           <div className="map-container">
             <div className="map-overlay">
               <div className="map-status">
-                <span className="status-text">Click to add waypoints</span>
-                <span className="status-text">Right click to remove</span>
+                {waitingForMapClick !== null ? (
+                  <>
+                    <span className="status-text status-active">
+                      🎯 {waitingForMapClick === 'depot' 
+                        ? 'Click to set depot location' 
+                        : `Click to set customer ${waitingForMapClick + 1} location`}
+                    </span>
+                    <span className="status-text">
+                      Press ESC or click ❌ to cancel
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="status-text">Search locations in form or click 🗺️ to select on map</span>
+                    <span className="status-text">Map clicking is disabled unless 🗺️ button is active</span>
+                  </>
+                )}
               </div>
             </div>
 
             <MapContainer
               center={[17.6868, 83.2185]}
               zoom={13}
-              className="leaflet-container"
-              onClick={handleMapClick}
+              className={`leaflet-container ${waitingForMapClick !== null ? 'map-click-mode' : ''}`}
             >
+              <MapClickHandler onMapClick={handleMapClick} />
               <TileLayer
                 attribution='© OpenStreetMap contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -347,10 +612,13 @@ function App() {
               
               {/* Markers */}
               {markers.map((marker) => (
-                <Marker key={marker.id} position={marker.position}>
+                <Marker 
+                  key={marker.id || marker.index} 
+                  position={marker.position}
+                  icon={markerIcons[marker.type] || markerIcons.customer}
+                >
                   <Popup>
-                    {marker.type === 'start' ? 'Start Location' : 
-                     marker.type === 'end' ? 'End Location' : 'Waypoint'}
+                    {marker.popup || marker.address || 'Location'}
                   </Popup>
                 </Marker>
               ))}
@@ -358,16 +626,16 @@ function App() {
 
             <div className="map-legend">
               <div className="legend-item">
-                <div className="legend-color start-point"></div>
-                <span>Start Point</span>
+                <div className="legend-color depot-point"></div>
+                <span>Depot/Warehouse</span>
               </div>
               <div className="legend-item">
-                <div className="legend-color end-point"></div>
-                <span>End Point</span>
+                <div className="legend-color customer-point"></div>
+                <span>Customer Locations</span>
               </div>
               <div className="legend-item">
-                <div className="legend-color waypoints"></div>
-                <span>Waypoints</span>
+                <div className="legend-color route-line"></div>
+                <span>Optimized Route</span>
               </div>
             </div>
           </div>
@@ -420,8 +688,8 @@ function App() {
                     <div className="metric-label">Optimization Time</div>
                   </div>
                   <div className="metric-card">
-                    <div className="metric-value">{results.nodesProcessed}</div>
-                    <div className="metric-label">Nodes Processed</div>
+                    <div className="metric-value">{results.customersServed}</div>
+                    <div className="metric-label">Customers Served</div>
                   </div>
                 </div>
               </div>
@@ -441,6 +709,9 @@ function App() {
                   </button>
                   <button className="action-btn secondary" onClick={compareOptimizations}>
                     📊 Compare Modes
+                  </button>
+                  <button className="action-btn secondary" onClick={showCoordinateData}>
+                    📍 View Coordinates
                   </button>
                 </div>
               </div>
