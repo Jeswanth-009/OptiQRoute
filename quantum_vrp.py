@@ -9,7 +9,7 @@ from qiskit_optimization import QuadraticProgram
 from qiskit_optimization.algorithms import MinimumEigenOptimizer
 from qiskit_algorithms.minimum_eigensolvers import QAOA
 from qiskit_algorithms.optimizers import COBYLA
-from qiskit.primitives import Sampler
+from qiskit.primitives import StatevectorSampler
 from qiskit_aer import AerSimulator
 
 def generate_customers(num_cities, seed=42):
@@ -116,33 +116,7 @@ def calculate_tour_length(customers, tour):
         total_length += euclidean_distance(customers[tour[i]], customers[tour[(i + 1) % len(tour)]])
     return total_length
 
-def solve_classical(customers):
-    """
-    Solves VRP for a small number of cities using a classical brute-force approach.
-    """
-    num_cities = len(customers)
-    start_time = time.time()
-    
-    if num_cities <= 1:
-        end_time = time.time()
-        return [0], 1, (end_time - start_time) * 1000
 
-    min_distance = float('inf')
-    best_tour = None
-    
-    all_permutations = list(itertools.permutations(range(num_cities)))
-    possible_routes = len(all_permutations)
-
-    for p in all_permutations:
-        current_distance = calculate_tour_length(customers, p)
-        if current_distance < min_distance:
-            min_distance = current_distance
-            best_tour = p
-    
-    end_time = time.time()
-    time_taken = (end_time - start_time) * 1000
-    
-    return best_tour, possible_routes, time_taken
 
 
 def solve_quantum(customers):
@@ -188,7 +162,7 @@ def solve_quantum(customers):
             name=f"enter_{j}"
         )
     
-    sampler = Sampler()
+    sampler = StatevectorSampler()
     optimizer = COBYLA(maxiter=50)
     qaoa = QAOA(optimizer=optimizer, reps=1, sampler=sampler)
     algo = MinimumEigenOptimizer(min_eigen_solver=qaoa)
@@ -231,25 +205,16 @@ def solve_quantum(customers):
 
 if __name__ == "__main__":
     try:
-        solver_choice = input("Select a solver (classical/quantum): ").lower()
-        if solver_choice not in ['classical', 'quantum']:
-            print("Invalid solver choice. Please enter 'classical' or 'quantum'.")
+        num_cities = int(input("Enter the number of cities (1-6): "))
+        
+        if num_cities < 1 or num_cities > 6:
+            print("Number of cities must be between 1 and 6.")
         else:
-            num_cities = int(input("Enter the number of cities (1-4): "))
+            customers = generate_customers(num_cities)
             
-            if num_cities < 1 or num_cities > 4:
-                print("Number of cities must be between 1 and 4.")
-            else:
-                customers = generate_customers(num_cities)
-                
-                if solver_choice == 'classical':
-                    print("\n--- Running Classical Brute Force Solver ---")
-                    tour, possible_routes, time_taken = solve_classical(customers)
-                    plot_solution(customers, tour, "Classical Solution (Brute Force)", num_cities, possible_routes, time_taken, 'Classical')
-                elif solver_choice == 'quantum':
-                    print("\n--- Running Quantum QAOA Solver (on Simulator) ---")
-                    tour, possible_routes, time_taken = solve_quantum(customers)
-                    plot_solution(customers, tour, "Quantum Solution (QAOA)", num_cities, possible_routes, time_taken, 'Quantum')
+            print("\n--- Running Quantum QAOA Solver (on Simulator) ---")
+            tour, possible_routes, time_taken = solve_quantum(customers)
+            plot_solution(customers, tour, "Quantum Solution (QAOA)", num_cities, possible_routes, time_taken, 'Quantum')
 
     except ValueError:
         print("Invalid input. Please enter a valid integer.")
