@@ -72,6 +72,32 @@ function App() {
   const [csvFile, setCsvFile] = useState(null);
   const [csvError, setCsvError] = useState('');
   const [comparisonResults, setComparisonResults] = useState(null);
+  // Animation state
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animatedMarkerPos, setAnimatedMarkerPos] = useState(null);
+  const [animationIndex, setAnimationIndex] = useState(0);
+
+  // Animate marker along routeCoords
+  useEffect(() => {
+    if (!isAnimating || !routeCoords || routeCoords.length === 0) return;
+    if (animationIndex >= routeCoords.length) {
+      setIsAnimating(false);
+      return;
+    }
+    setAnimatedMarkerPos(routeCoords[animationIndex]);
+    const timer = setTimeout(() => {
+      setAnimationIndex((i) => i + 1);
+    }, 500); // 500ms per step
+    return () => clearTimeout(timer);
+  }, [isAnimating, animationIndex, routeCoords]);
+
+  // Start animation handler
+  const startRouteAnimation = () => {
+    if (routeCoords.length > 0) {
+      setAnimationIndex(0);
+      setIsAnimating(true);
+    }
+  };
 
   // Load stored locations on component mount
   useEffect(() => {
@@ -882,7 +908,6 @@ ${dataString}
                 attribution='© OpenStreetMap contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              
               {/* Route Polylines - Show all vehicle routes */}
               {allRoutes.length > 0 ? (
                 allRoutes.map((routeCoords, index) => (
@@ -912,7 +937,12 @@ ${dataString}
                   />
                 )
               )}
-              
+              {/* Animated Marker for route animation */}
+              {isAnimating && animatedMarkerPos && (
+                <Marker position={animatedMarkerPos} icon={markerIcons.route}>
+                  <Popup>Vehicle in transit</Popup>
+                </Marker>
+              )}
               {/* Markers */}
               {markers.map((marker) => (
                 <Marker 
@@ -926,6 +956,12 @@ ${dataString}
                 </Marker>
               ))}
             </MapContainer>
+            {/* Animation Controls */}
+            <div style={{marginTop: '10px', textAlign: 'center'}}>
+              <button onClick={startRouteAnimation} disabled={isAnimating || routeCoords.length === 0} style={{padding: '8px 16px', fontSize: '16px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '5px', cursor: isAnimating ? 'not-allowed' : 'pointer'}}>
+                {isAnimating ? 'Animating...' : 'Animate Route'}
+              </button>
+            </div>
 
             <div className="map-legend">
               <div className="legend-item">
