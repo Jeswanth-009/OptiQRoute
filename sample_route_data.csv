@@ -1,0 +1,7 @@
+lat,lon,type,demand
+17.6868,83.2185,depot,0
+17.6970,83.2095,customer,10
+17.6970,83.2275,customer,15
+17.6770,83.2275,customer,12
+17.6770,83.2095,customer,8
+17.6900,83.2300,customer,20
