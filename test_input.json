@@ -1,0 +1,38 @@
+{
+  "instance": {
+    "locations": [
+      {
+        "id": 0,
+        "name": "Depot",
+        "coordinate": {"lat": 17.6868, "lon": 83.2185},
+        "demand": 0.0,
+        "time_window": null,
+        "service_time": 0.0
+      },
+      {
+        "id": 1,
+        "name": "Customer 1",
+        "coordinate": {"lat": 17.7231, "lon": 83.3109},
+        "demand": 10.0,
+        "time_window": null,
+        "service_time": 5.0
+      }
+    ],
+    "vehicles": [
+      {
+        "id": 0,
+        "capacity": 100.0,
+        "max_distance": null,
+        "max_duration": null,
+        "depot_id": 0
+      }
+    ],
+    "distance_matrix": [],
+    "time_matrix": null
+  },
+  "algorithm": "greedy",
+  "settings": {
+    "distance_method": "haversine",
+    "parallel": true
+  }
+}

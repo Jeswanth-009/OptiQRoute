@@ -1,0 +1,20 @@
+{
+  "routes": [
+    {
+      "vehicle_id": 0,
+      "locations": [
+        1
+      ],
+      "total_distance": 21174.76660359019,
+      "total_duration": 0.0,
+      "total_demand": 10.0
+    }
+  ],
+  "total_distance": 21174.76660359019,
+  "total_duration": 0.0,
+  "num_vehicles_used": 1,
+  "algorithm": "greedy",
+  "solve_time_ms": 0.0,
+  "success": true,
+  "error": null
+}
